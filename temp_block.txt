@@ -1,0 +1,140 @@
+                  {activeTab === 'CONFIG_GENERAL' && (
+                      <>
+                          {/* LOGO UPLOAD */}
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+                              <label className="text-xs font-bold uppercase text-slate-500 block mb-2">App Logo</label>
+                              <div className="flex items-center gap-4">
+                                  <div className="w-20 h-20 bg-white rounded-full border border-slate-300 flex items-center justify-center overflow-hidden">
+                                      {localSettings.appLogo ? (
+                                          <img src={localSettings.appLogo} alt="Logo" className="w-full h-full object-contain" />
+                                      ) : (
+                                          <span className="text-xs text-slate-400 font-bold">{localSettings.appShortName || 'IIC'}</span>
+                                      )}
+                                  </div>
+                                  <div className="flex-1">
+                                      <input 
+                                          type="file" 
+                                          accept="image/*"
+                                          onChange={(e) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                  // Check size (e.g., max 2MB before crop)
+                                                  if (file.size > 2 * 1024 * 1024) {
+                                                      alert("Image too large! Please select an image under 2MB.");
+                                                      return;
+                                                  }
+                                                  const reader = new FileReader();
+                                                  reader.onloadend = () => {
+                                                      setCropImageSrc(reader.result as string);
+                                                  };
+                                                  reader.readAsDataURL(file);
+                                              }
+                                          }}
+                                          className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                      />
+                                      <p className="text-[10px] text-slate-400 mt-1">Recommended: Square PNG/JPG</p>
+                                  </div>
+                                  {localSettings.appLogo && (
+                                      <button 
+                                          onClick={() => setLocalSettings({...localSettings, appLogo: undefined})}
+                                          className="text-red-500 hover:text-red-700 p-2"
+                                          title="Remove Logo"
+                                      >
+                                          <Trash2 size={20} />
+                                      </button>
+                                  )}
+                              </div>
+                          </div>
+
+                          <div><label className="text-xs font-bold uppercase text-slate-500">App Name (Long)</label><input type="text" value={localSettings.appName} onChange={e => setLocalSettings({...localSettings, appName: e.target.value})} className="w-full p-3 border rounded-xl" placeholder="IDEAL INSPIRATION CLASSES" /></div>
+                          <div><label className="text-xs font-bold uppercase text-slate-500">App Logo (Image URL)</label><input type="text" value={localSettings.appLogo || ''} onChange={e => setLocalSettings({...localSettings, appLogo: e.target.value})} className="w-full p-3 border rounded-xl" placeholder="https://example.com/logo.png" /></div>
+                          <div className="grid grid-cols-2 gap-3">
+                              <div><label className="text-xs font-bold uppercase text-slate-500">App Short Name</label><input type="text" value={localSettings.appShortName || 'IIC'} onChange={e => setLocalSettings({...localSettings, appShortName: e.target.value})} className="w-full p-3 border rounded-xl" placeholder="IIC" /></div>
+                              <div><label className="text-xs font-bold uppercase text-slate-500">AI Assistant Name</label><input type="text" value={localSettings.aiName || 'IIC AI'} onChange={e => setLocalSettings({...localSettings, aiName: e.target.value})} className="w-full p-3 border rounded-xl" placeholder="IIC AI" /></div>
+                          </div>
+                          
+                          {/* CHAT MODE SELECTOR */}
+                          <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
+                              <label className="text-xs font-bold uppercase text-indigo-800 mb-2 block">Chat System Mode</label>
+                              <div className="grid grid-cols-3 gap-2">
+                                  {['PRIVATE_ONLY', 'UNIVERSAL_ONLY', 'BOTH'].map(mode => (
+                                      <button 
+                                          key={mode} 
+                                          onClick={() => setLocalSettings({...localSettings, chatMode: mode as any})}
+                                          className={`py-2 rounded-lg text-xs font-bold border transition-all ${localSettings.chatMode === mode ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-600 border-indigo-100 hover:bg-indigo-50'}`}
+                                      >
+                                          {mode.replace('_', ' ')}
+                                      </button>
+                                  ))}
+                              </div>
+                          </div>
+
+                          {/* FOOTER CUSTOMIZATION */}
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4">
+                              <label className="text-xs font-bold uppercase text-slate-800 mb-3 block underline decoration-blue-500 decoration-2 underline-offset-4">Footer Customization</label>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                      <div className="flex flex-col">
+                                          <span className="text-sm font-bold text-slate-700">Display Footer</span>
+                                          <span className="text-[10px] text-slate-400">Show/Hide the "Developed by" line</span>
+                                      </div>
+                                      <button 
+                                          onClick={() => setLocalSettings({...localSettings, showFooter: localSettings.showFooter === false ? true : false})}
+                                          className={`w-12 h-6 rounded-full transition-colors relative ${localSettings.showFooter !== false ? 'bg-blue-600' : 'bg-slate-300'}`}
+                                      >
+                                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${localSettings.showFooter !== false ? 'left-7' : 'left-1'}`} />
+                                      </button>
+                                  </div>
+                                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Custom Name / Text</label>
+                                      <input 
+                                          type="text" 
+                                          value={localSettings.footerText || ''} 
+                                          onChange={e => setLocalSettings({...localSettings, footerText: e.target.value})}
+                                          className="w-full p-2 border rounded-lg text-sm font-bold"
+                                          placeholder="Developed by Nadim Anwar"
+                                      />
+                                  </div>
+                                  <div className="md:col-span-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Text Color</label>
+                                      <div className="flex gap-3">
+                                          <input 
+                                              type="color" 
+                                              value={localSettings.footerColor || '#94a3b8'} 
+                                              onChange={e => setLocalSettings({...localSettings, footerColor: e.target.value})}
+                                              className="h-10 w-14 rounded-lg border-2 border-slate-100 p-1 cursor-pointer"
+                                          />
+                                          <input 
+                                              type="text" 
+                                              value={localSettings.footerColor || ''} 
+                                              onChange={e => setLocalSettings({...localSettings, footerColor: e.target.value})}
+                                              className="flex-1 p-2 border rounded-lg text-sm font-mono bg-slate-50"
+                                              placeholder="#94a3b8"
+                                          />
+                                          <button 
+                                              onClick={() => setLocalSettings({...localSettings, footerColor: '#94a3b8'})}
+                                              className="px-3 py-2 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-lg hover:bg-slate-200"
+                                          >
+                                              Reset
+                                          </button>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div><label className="text-xs font-bold uppercase text-slate-500">Login Screen Message</label><input type="text" value={localSettings.loginMessage} onChange={e => setLocalSettings({...localSettings, loginMessage: e.target.value})} className="w-full p-3 border rounded-xl" /></div>
+                          
+                          <div>
+                              <label className="text-xs font-bold uppercase text-slate-500">Home Screen Notice</label>
+                              <textarea 
+                                  value={localSettings.noticeText || ''} 
+                                  onChange={e => setLocalSettings({...localSettings, noticeText: e.target.value})} 
+                                  className="w-full p-3 border rounded-xl h-24"
+                                  placeholder="Write a notice for students..." 
+                              />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                  <label className="text-xs font-bold uppercase text-slate-500">Support Chat Cost</label>
+                                  <input type="number" value={localSettings.chatCost} onChange={e => setLocalSettings({...localSettings, chatCost: Number(e.target.value)})} className="w-full p-3 border rounded-xl" />

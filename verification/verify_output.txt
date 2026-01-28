@@ -1,0 +1,3 @@
+Navigating to http://localhost:5001...
+Screenshot taken: dashboard_view.png
+Performance Trend NOT visible.

@@ -1,0 +1,3 @@
+./components/AiDeepAnalysis.tsx:177:                        <BrainCircuit className="text-violet-600" /> Smart Hub
+./components/AdminDashboard.tsx:8085:                          { key: 'aiDeepAnalysisCost', label: 'AI Deep Analysis (Smart Hub)', default: 10 },
+./components/StudentDashboard.tsx:1292:                                  <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Smart Hub</span>

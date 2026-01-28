@@ -1,0 +1,153 @@
+      {activeTab === 'SYLLABUS_MANAGER' && (
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 animate-in slide-in-from-right">
+              <div className="flex items-center gap-4 mb-6 border-b pb-4">
+                  <button onClick={() => setActiveTab('DASHBOARD')} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><ArrowLeft size={20} /></button>
+                  <h3 className="text-xl font-black text-indigo-800">Syllabus Manager</h3>
+              </div>
+              <SubjectSelector />
+              {selSubject && (
+                  <div className="space-y-6">
+                      {/* BULK UPLOAD SECTION */}
+                      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 animate-in fade-in">
+                          <h4 className="font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                               <LayersIcon size={18} /> Bulk Syllabus Upload
+                          </h4>
+                          <p className="text-xs text-indigo-700 mb-3 leading-relaxed">
+                               Paste chapter list (one per line) to <strong className="bg-indigo-100 px-1 rounded">REPLACE</strong> the entire syllabus.
+                               <br/>This updates PDF, Video, and MCQ sections automatically.
+                          </p>
+                          <textarea
+                              value={syllabusImportText}
+                              onChange={(e) => setSyllabusImportText(e.target.value)}
+                              className="w-full h-32 p-3 text-sm border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 mb-3 shadow-inner"
+                              placeholder={"Chapter 1: Real Numbers\nChapter 2: Polynomials\nChapter 3: Linear Equations..."}
+                          />
+                          <div className="flex gap-2">
+                               <button 
+                                   onClick={async () => {
+                                        if (!syllabusImportText.trim()) { alert("Paste content first."); return; }
+                                        const lines = syllabusImportText.split('\n').map(l => l.trim()).filter(l => l);
+                                        const newChapters = lines.map((title, idx) => ({
+                                            id: `ch-${Date.now()}-${idx}`,
+                                            title: title,
+                                            description: `Chapter ${idx + 1}`
+                                        }));
+                                        setSelChapters(newChapters);
+                                        
+                                        // Trigger Save
+                                        if(confirm(`⚠️ Overwrite Syllabus with ${newChapters.length} chapters?\n\nThis will update the syllabus for ALL students immediately.`)) {
+                                            const streamKey = (selClass === '11' || selClass === '12') && selStream ? `-${selStream}` : '';
+                                            const baseKey = `${selBoard}-${selClass}${streamKey}-${selSubject.name}`;
+                                            
+                                            // Save to Cloud
+                                            if(isFirebaseConnected) {
+                                                await saveCustomSyllabus(`${baseKey}-English`, newChapters);
+                                                await saveCustomSyllabus(`${baseKey}-Hindi`, newChapters);
+                                            }
+                                            
+                                            // Save Local
+                                            localStorage.setItem(`nst_custom_chapters_${baseKey}-English`, JSON.stringify(newChapters));
+                                            localStorage.setItem(`nst_custom_chapters_${baseKey}-Hindi`, JSON.stringify(newChapters));
+                                            
+                                            alert("✅ Syllabus Overwritten & Saved to Cloud!");
+                                            setSyllabusImportText('');
+                                        }
+                                   }} 
+                                   className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg hover:bg-indigo-700 flex items-center gap-2 transition-transform active:scale-95"
+                               >
+                                   <Save size={16} /> Replace & Save Syllabus
+                               </button>
+                               
+                               <button 
+                                   onClick={async () => {
+                                       if(confirm("Reset to Default Static/AI Syllabus? This cannot be undone.")) {
+                                            const streamKey = (selClass === '11' || selClass === '12') && selStream ? `-${selStream}` : '';
+                                            const baseKey = `${selBoard}-${selClass}${streamKey}-${selSubject.name}`;
+                                            
+                                            if(isFirebaseConnected) {
+                                                await deleteCustomSyllabus(`${baseKey}-English`);
+                                                await deleteCustomSyllabus(`${baseKey}-Hindi`);
+                                            }
+                                            localStorage.removeItem(`nst_custom_chapters_${baseKey}-English`);
+                                            localStorage.removeItem(`nst_custom_chapters_${baseKey}-Hindi`);
+                                            
+                                            const fresh = await fetchChapters(selBoard, selClass, selStream, selSubject, 'English');
+                                            setSelChapters(fresh);
+                                            alert("✅ Reset Complete!");
+                                       }
+                                   }}
+                                   className="bg-white border border-red-200 text-red-600 px-4 py-2 rounded-lg font-bold text-xs hover:bg-red-50 flex items-center gap-2"
+                               >
+                                   <RotateCcw size={16} /> Reset to Default
+                               </button>
+                          </div>
+                      </div>
+
+                      <div className="flex justify-between items-center bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                          <h4 className="font-bold text-indigo-900">Manual Edit: {selSubject.name}</h4>
+                          <div className="flex gap-2">
+                              <button onClick={() => setSelChapters([...selChapters, { id: `manual-${Date.now()}`, title: 'New Chapter' }])} className="px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 font-bold rounded-lg text-xs">+ Add Chapter</button>
+                              <button onClick={saveSyllabusList} className="px-3 py-1.5 bg-indigo-600 text-white font-bold rounded-lg text-xs shadow">Save List</button>
+                          </div>
+                      </div>
+                      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+                          {selChapters.map((ch, idx) => (
+                              <div key={ch.id} className="flex gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                  <span className="w-6 text-center text-xs font-bold text-slate-400">{idx + 1}</span>
+                                  <input 
+                                      type="text" 
+                                      value={ch.title} 
+                                      onChange={(e) => { const up = [...selChapters]; up[idx].title = e.target.value; setSelChapters(up); }}
+                                      className="flex-1 p-2 border border-slate-200 rounded text-sm font-medium focus:border-indigo-500 outline-none"
+                                  />
+                                  
+                                  {/* MANAGE CONTENT BUTTON (New Feature) */}
+                                  <button 
+                                      onClick={() => {
+                                          loadChapterContent(ch.id);
+                                          setActiveTab('CONTENT_PDF'); // Switch to editor view directly
+                                      }}
+                                      className="px-3 py-1.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded hover:bg-blue-200 whitespace-nowrap"
+                                      title="Edit PDF, Video, MCQ for this Chapter"
+                                  >
+                                      Edit Content
+                                  </button>
+
+                                  {/* LOCK TOGGLE */}
+                                  <button 
+                                      onClick={() => {
+                                          const up = [...selChapters];
+                                          // Toggle 'isLocked' property
+                                          // @ts-ignore
+                                          up[idx].isLocked = !up[idx].isLocked;
+                                          setSelChapters(up);
+                                      }}
+                                      className={`p-2 rounded-lg transition-colors ${
+                                          // @ts-ignore
+                                          ch.isLocked ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-400 hover:text-slate-600'
+                                      }`}
+                                      title={
+                                          // @ts-ignore
+                                          ch.isLocked ? "Unlock Chapter" : "Lock Chapter"
+                                      }
+                                  >
+                                      {/* @ts-ignore */}
+                                      {ch.isLocked ? <Lock size={16} /> : <Eye size={16} />}
+                                  </button>
+
+                                  <button onClick={() => deleteChapter(idx)} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16} /></button>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+              )}
+          </div>
+      )}
+
+      {/* 3. CONTENT MANAGERS (PDF, VIDEO, MCQ, TEST, IMAGE) */}
+      {['CONTENT_PDF', 'CONTENT_VIDEO', 'CONTENT_AUDIO', 'CONTENT_MCQ', 'CONTENT_TEST', 'CONTENT_HTML'].includes(activeTab) && (
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 animate-in slide-in-from-right">
+              <div className="flex items-center gap-4 mb-6 border-b pb-4">
+                  <button onClick={() => setActiveTab('DASHBOARD')} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><ArrowLeft size={20} /></button>
+                  <h3 className="text-xl font-black text-slate-800">
+                      {activeTab === 'CONTENT_PDF' ? 'PDF Study Material' : activeTab === 'CONTENT_VIDEO' ? 'Video Lectures' : activeTab === 'CONTENT_AUDIO' ? 'Audio Library' : activeTab === 'CONTENT_MCQ' ? 'Practice MCQs' : activeTab === 'CONTENT_HTML' ? 'Interactive HTML Modules' : 'Weekly Tests - Multi-Subject'}
